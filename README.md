@@ -196,6 +196,34 @@ Key outputs:
   - [`results/single_asset_mainline/final_model_gspc_to_spy/roc_curve.png`](results/single_asset_mainline/final_model_gspc_to_spy/roc_curve.png)
   - [`results/single_asset_mainline/final_model_gspc_to_spy/classification_metrics_over_time.png`](results/single_asset_mainline/final_model_gspc_to_spy/classification_metrics_over_time.png)
 
+### ML Diagnostics
+
+Average OOS classification metrics:
+
+| Model | Accuracy | Balanced Accuracy | F1 | Log Loss | ROC-AUC |
+|---|---:|---:|---:|---:|---:|
+| Paper baseline | 0.8133 | 0.6975 | 0.7843 | 0.4070 | 0.8307 |
+| Final model | 0.8117 | 0.7146 | 0.7941 | 0.4192 | 0.8217 |
+
+Interpretation:
+
+- The final model improves balanced accuracy and F1 relative to the paper baseline.
+- Accuracy is roughly flat, while log loss and ROC-AUC are slightly weaker than the baseline.
+- This is consistent with the broader project conclusion: the final edge comes mainly from a better execution layer, not from a wholesale jump in raw classifier quality.
+- The time-series plot below is useful because it shows that classification quality is not constant across windows; the overlay has to survive changing regime conditions rather than a single stable ML environment.
+
+Confusion matrix:
+
+![Final model confusion matrix](results/single_asset_mainline/final_model_gspc_to_spy/confusion_matrix.png)
+
+ROC curve:
+
+![Final model ROC curve](results/single_asset_mainline/final_model_gspc_to_spy/roc_curve.png)
+
+Classification metrics over time:
+
+![Final model classification metrics over time](results/single_asset_mainline/final_model_gspc_to_spy/classification_metrics_over_time.png)
+
 ## Diagnostics
 
 The unified diagnostic result supports the following interpretation:
