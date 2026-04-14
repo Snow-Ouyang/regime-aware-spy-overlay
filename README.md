@@ -32,6 +32,10 @@ The goal is not to build a pure market-timing strategy that simply beats `SPY` o
 | Final model | 0.0737 | 0.5731 | -0.1684 |
 | Buy-and-hold | 0.0836 | 0.4172 | -0.5569 |
 
+Mainline equity curve comparison:
+
+![Paper baseline vs final model vs buy-and-hold](results/single_asset_mainline/diagnostics_baseline_vs_final/phase_equity_curves.png)
+
 ## Research Question
 
 Can a regime-aware ML overlay built on `^GSPC`:
