@@ -1016,6 +1016,17 @@ def write_stage_outputs(
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(daily_equity["Date"], daily_equity["equity_strategy"], label=version_name, linewidth=1.8)
     ax.plot(daily_equity["Date"], daily_equity["equity_buy_and_hold"], label=BUYHOLD_VERSION, linewidth=1.8)
+    if "signal_zone" in signal_frame.columns:
+        ordered_signal = signal_frame[["Date", "signal_zone"]].copy()
+        ordered_signal["Date"] = pd.to_datetime(ordered_signal["Date"])
+        ordered_signal = ordered_signal.sort_values("Date").reset_index(drop=True)
+        bear_mask = ordered_signal["signal_zone"].eq("bear")
+        if bear_mask.any():
+            block_id = (bear_mask != bear_mask.shift(fill_value=False)).cumsum()
+            for _, block in ordered_signal.loc[bear_mask].groupby(block_id[bear_mask]):
+                start = block["Date"].iloc[0]
+                end = block["Date"].iloc[-1]
+                ax.axvspan(start, end + pd.Timedelta(days=1), color="red", alpha=0.08, linewidth=0)
     ax.set_title(f"{version_name} vs buy-and-hold")
     ax.set_xlabel("Date")
     ax.set_ylabel("Equity")

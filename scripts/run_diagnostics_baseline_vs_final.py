@@ -298,8 +298,16 @@ def main() -> None:
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(12, 4.5))
-    ax.plot(reentry["reentry_date"], reentry["lag_days"], marker="o", linestyle="-", linewidth=1)
+    baseline_pts = reentry.loc[reentry["version"] == BASELINE_NAME]
+    final_pts = reentry.loc[reentry["version"] == FINAL_NAME]
+    if not baseline_pts.empty:
+        ax.scatter(baseline_pts["reentry_date"], baseline_pts["lag_days"], s=30, alpha=0.65, label="paper_baseline")
+    if not final_pts.empty:
+        ax.scatter(final_pts["reentry_date"], final_pts["lag_days"], s=30, alpha=0.65, label="final_model")
     ax.set_title("Reentry Lag Examples")
+    ax.set_ylabel("Lag Days")
+    ax.grid(axis="y", alpha=0.3)
+    ax.legend()
     fig.tight_layout()
     fig.savefig(out_dir / "reentry_lag_examples.png", dpi=150)
     plt.close(fig)

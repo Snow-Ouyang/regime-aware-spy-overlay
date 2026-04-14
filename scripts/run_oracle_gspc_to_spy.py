@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from single_asset_gspc_spy_common import (
@@ -11,15 +10,17 @@ from single_asset_gspc_spy_common import (
     results_root,
     run_current_mapped_oracle_stage,
     run_full_upper_bound_oracle_stage,
+    write_stage_outputs,
 )
 from spy_regime_common import build_strategy_metrics
 
 
-RESULTS_SUBDIR = "oracle_gspc_to_spy_comparison"
+MAINLINE_RESULTS_SUBDIR = "oracle_gspc_to_spy"
+COMPARISON_RESULTS_SUBDIR = "oracle_gspc_to_spy_comparison"
 
 
-def output_dir() -> Path:
-    out = results_root() / RESULTS_SUBDIR
+def output_dir(results_subdir: str) -> Path:
+    out = results_root() / results_subdir
     out.mkdir(parents=True, exist_ok=True)
     return out
 
@@ -59,11 +60,8 @@ def build_alignment_sample(signal_frame: pd.DataFrame, mapped_frame: pd.DataFram
     return sample.head(sample_size)
 
 
-def main() -> None:
-    current = run_current_mapped_oracle_stage()
-    full = run_full_upper_bound_oracle_stage()
-    out_dir = output_dir()
-
+def write_comparison_outputs(current: dict, full: dict) -> None:
+    out_dir = output_dir(COMPARISON_RESULTS_SUBDIR)
     current_mapped = current["mapped_frame"].copy()
     full_mapped = full["mapped_frame"].copy()
     buyhold = full["buyhold_frame"].copy()
@@ -91,8 +89,7 @@ def main() -> None:
     current_alignment.insert(0, "version", CURRENT_MAPPED_ORACLE_VERSION)
     full_alignment = build_alignment_sample(full["signal_frame"], full_mapped, sample_size=20)
     full_alignment.insert(0, "version", FULL_UPPER_BOUND_ORACLE_VERSION)
-    alignment = pd.concat([current_alignment, full_alignment], ignore_index=True)
-    alignment.to_csv(out_dir / "oracle_alignment_check_sample.csv", index=False)
+    pd.concat([current_alignment, full_alignment], ignore_index=True).to_csv(out_dir / "oracle_alignment_check_sample.csv", index=False)
 
     current["signal_frame"].to_csv(out_dir / "current_mapped_oracle_signal_panel.csv", index=False)
     full["signal_frame"].to_csv(out_dir / "full_upper_bound_oracle_signal_panel.csv", index=False)
@@ -131,7 +128,24 @@ def main() -> None:
     fig.savefig(out_dir / "oracle_drawdown_comparison.png", dpi=150)
     plt.close(fig)
 
-    print(f"Results directory: {out_dir}")
+
+def main() -> None:
+    current = run_current_mapped_oracle_stage()
+    full = run_full_upper_bound_oracle_stage()
+
+    # Mainline oracle output now uses the strongest full upper-bound oracle.
+    write_stage_outputs(
+        results_subdir=MAINLINE_RESULTS_SUBDIR,
+        version_name=FULL_UPPER_BOUND_ORACLE_VERSION,
+        mapped_frame=full["mapped_frame"],
+        buyhold_frame=full["buyhold_frame"],
+        signal_frame=full["signal_frame"],
+        output_ml_figures=False,
+    )
+    write_comparison_outputs(current, full)
+
+    print(f"Mainline oracle directory: {output_dir(MAINLINE_RESULTS_SUBDIR)}")
+    print(f"Comparison directory: {output_dir(COMPARISON_RESULTS_SUBDIR)}")
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ The goal is not to build a pure market-timing strategy that simply beats `SPY` o
 
 ## Main Takeaways
 
-1. The oracle stage confirms that the JumpModel regime labels have economic value under the mapped `^GSPC -> SPY` research-to-trade structure.
+1. The oracle stage confirms that the JumpModel regime labels have economic value under the mapped `^GSPC -> SPY` research-to-trade structure. The Results section reports the stronger full upper-bound oracle reference.
 2. Relative to the paper baseline, the final model improves annual return and Sharpe and also improves max drawdown.
 3. The final model still does not beat buy-and-hold on absolute annual return, but it keeps Sharpe above buy-and-hold and retains materially better downside protection.
 
@@ -47,6 +47,71 @@ Can a regime-aware ML overlay built on `^GSPC`:
 ## Methodology
 
 The repository preserves the mainline path from label validation to the final overlay.
+
+### How JumpModel and XGBoost Work Together
+
+The core pipeline has two separate steps:
+
+1. **JumpModel defines the target regime labels**
+2. **XGBoost predicts those labels out of sample**
+
+They do different jobs and should not be confused.
+
+#### Step A. JumpModel: regime discovery and label construction
+
+JumpModel is used first, before any supervised learning, to convert the research asset return path into a latent two-state bull/bear regime sequence.
+
+- Input: the research feature panel for `^GSPC`
+- Configuration: `n_components = 2`, `jump_penalty = 0.0`
+- Output: a daily regime label sequence that is later mapped into bull / bear labels
+
+Why this matters:
+
+- The project is not asking XGBoost to invent a target from scratch.
+- JumpModel provides the economic state definition.
+- Oracle is then used to test whether those realized labels have economic value under the same `^GSPC -> SPY` mapping.
+
+In this repository, the JumpModel configuration is fixed in the active mainline rather than re-searched at every stage. That means the supervised problem is stable: the label definition does not drift while execution rules are being compared.
+
+#### Step B. XGBoost: supervised prediction of the next regime label
+
+Once JumpModel has produced the daily regime labels, the supervised dataset is built in strict time order:
+
+- features at time `t`
+- target label = realized regime label at `t+1`
+
+So the supervised task is:
+
+- use today’s feature vector to predict tomorrow’s bull / bear label
+
+XGBoost is then trained on rolling windows and evaluated first on validation, then on OOS blocks.
+
+- Train window: `11 years`
+- Validation window: `4 years`
+- OOS block: `6 months`
+- Unified OOS start: `2000-05-26`
+
+This validation layer is where the execution settings are chosen:
+
+- smoothing halflife
+- threshold rule parameters
+- final execution logic comparisons
+
+That is what “use XGBoost to validate” means in this project:
+
+- XGBoost produces out-of-sample probabilities for the next bull / bear label
+- validation decides how to translate those probabilities into positions
+- the chosen rule is then applied to the corresponding OOS block
+
+#### Why the pipeline is structured this way
+
+This separation is intentional:
+
+- **JumpModel** answers: “what is the regime label?”
+- **XGBoost** answers: “can today’s observable features predict tomorrow’s regime label?”
+- **Execution rules** answer: “how should predicted probabilities be converted into positions on `SPY`?”
+
+That division is important because many experiments in this repo showed that trading performance can improve or deteriorate even when raw classification metrics move only slightly. In other words, label quality, probability quality, and execution quality are related, but they are not the same thing.
 
 ### 1. Oracle
 
@@ -171,7 +236,7 @@ Mainline summary under the unified `2000-05-26` protocol:
 
 | Stage | Annual Return | Sharpe | Max Drawdown |
 |---|---:|---:|---:|
-| Oracle | 0.0217 | 0.0770 | -0.3089 |
+| Full Oracle | 0.4348 | 3.7863 | -0.0462 |
 | Paper baseline | 0.0694 | 0.5244 | -0.1873 |
 | Feature enhanced | 0.0709 | 0.5368 | -0.1834 |
 | Final model | 0.0737 | 0.5731 | -0.1684 |
@@ -223,6 +288,12 @@ ROC curve:
 Classification metrics over time:
 
 ![Final model classification metrics over time](results/single_asset_mainline/final_model_gspc_to_spy/classification_metrics_over_time.png)
+
+### Final Model vs Buy-and-Hold
+
+The chart below shades final-model bear periods in red so the equity comparison can be read together with the regime filter.
+
+![Final model vs buy-and-hold with bear shading](results/single_asset_mainline/final_model_gspc_to_spy/strategy_vs_buyhold.png)
 
 ## Diagnostics
 
