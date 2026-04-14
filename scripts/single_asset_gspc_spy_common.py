@@ -400,6 +400,117 @@ def final_overlay_positions(
     return positions, zones, rising_entry, drawdown_entry, prev
 
 
+def single_threshold_overlay_positions(
+    probabilities: np.ndarray,
+    drawdowns: np.ndarray,
+    initial_position: int,
+    threshold: float,
+    rising_floor: float,
+    drawdown_threshold: float,
+    drawdown_prob_floor: float,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
+    probs = np.asarray(probabilities, dtype=float)
+    dd = np.asarray(drawdowns, dtype=float)
+    positions = np.empty(len(probs), dtype=int)
+    zones = np.empty(len(probs), dtype=object)
+    rising_entry = np.zeros(len(probs), dtype=int)
+    drawdown_entry = np.zeros(len(probs), dtype=int)
+    prev = int(initial_position)
+
+    for idx, prob in enumerate(probs):
+        rising_confirm = (
+            idx >= 2
+            and probs[idx - 1] > probs[idx - 2]
+            and prob > probs[idx - 1]
+            and prob > rising_floor
+        )
+        dd_entry = bool(dd[idx] <= -drawdown_threshold and prob > drawdown_prob_floor)
+        rising_entry[idx] = int(rising_confirm)
+        drawdown_entry[idx] = int(dd_entry)
+
+        if prev == 0:
+            current = int(prob >= threshold or rising_confirm or dd_entry)
+        else:
+            current = int(prob >= threshold)
+
+        positions[idx] = current
+        zones[idx] = "bull" if current == 1 else "bear"
+        prev = current
+
+    return positions, zones, rising_entry, drawdown_entry, prev
+
+
+def single_threshold_drawdown_overlay_positions(
+    probabilities: np.ndarray,
+    drawdowns: np.ndarray,
+    initial_position: int,
+    threshold: float,
+    drawdown_threshold: float,
+    drawdown_prob_floor: float,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, int]:
+    probs = np.asarray(probabilities, dtype=float)
+    dd = np.asarray(drawdowns, dtype=float)
+    positions = np.empty(len(probs), dtype=int)
+    zones = np.empty(len(probs), dtype=object)
+    drawdown_entry = np.zeros(len(probs), dtype=int)
+    prev = int(initial_position)
+
+    for idx, prob in enumerate(probs):
+        dd_entry = bool(dd[idx] <= -drawdown_threshold and prob > drawdown_prob_floor)
+        drawdown_entry[idx] = int(dd_entry)
+
+        if prev == 0:
+            current = int(prob >= threshold or dd_entry)
+        else:
+            current = int(prob >= threshold)
+
+        positions[idx] = current
+        zones[idx] = "bull" if current == 1 else "bear"
+        prev = current
+
+    return positions, zones, drawdown_entry, prev
+
+
+def single_threshold_drawdown_rising_overlay_positions(
+    probabilities: np.ndarray,
+    drawdowns: np.ndarray,
+    initial_position: int,
+    threshold: float,
+    rising_floor: float,
+    drawdown_threshold: float,
+    drawdown_prob_floor: float,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
+    probs = np.asarray(probabilities, dtype=float)
+    dd = np.asarray(drawdowns, dtype=float)
+    positions = np.empty(len(probs), dtype=int)
+    zones = np.empty(len(probs), dtype=object)
+    rising_entry = np.zeros(len(probs), dtype=int)
+    drawdown_entry = np.zeros(len(probs), dtype=int)
+    prev = int(initial_position)
+
+    for idx, prob in enumerate(probs):
+        rising_confirm = (
+            idx >= 2
+            and probs[idx - 1] > probs[idx - 2]
+            and prob > probs[idx - 1]
+            and prob > rising_floor
+        )
+        dd_entry = bool(dd[idx] <= -drawdown_threshold and prob > drawdown_prob_floor)
+        rising_entry[idx] = int(rising_confirm)
+        drawdown_entry[idx] = int(dd_entry)
+
+        if prev == 0:
+            current = int(prob >= threshold or rising_confirm or dd_entry)
+        else:
+            current = int(prob >= threshold)
+
+        positions[idx] = current
+        zones[idx] = "bull" if current == 1 else "bear"
+        prev = current
+
+    return positions, zones, rising_entry, drawdown_entry, prev
+
+
 def score_validation(
     validation_cache: List[Dict[str, object]],
     config: StageConfig,
@@ -430,6 +541,35 @@ def score_validation(
                 float(config.drawdown_threshold),
                 float(config.drawdown_prob_floor),
             )
+        elif config.rule_mode == "single_threshold_overlay":
+            positions, _, _, _, current_position = single_threshold_overlay_positions(
+                smoothed_prob,
+                bundle["drawdown"],
+                current_position,
+                float(config.threshold),
+                float(config.rising_floor),
+                float(config.drawdown_threshold),
+                float(config.drawdown_prob_floor),
+            )
+        elif config.rule_mode == "single_threshold_drawdown_overlay":
+            positions, _, _, current_position = single_threshold_drawdown_overlay_positions(
+                smoothed_prob,
+                bundle["drawdown"],
+                current_position,
+                float(config.threshold),
+                float(config.drawdown_threshold),
+                float(config.drawdown_prob_floor),
+            )
+        elif config.rule_mode == "single_threshold_drawdown_rising_overlay":
+            positions, _, _, _, current_position = single_threshold_drawdown_rising_overlay_positions(
+                smoothed_prob,
+                bundle["drawdown"],
+                current_position,
+                float(config.threshold),
+                float(config.rising_floor),
+                float(config.drawdown_threshold),
+                float(config.drawdown_prob_floor),
+            )
         else:
             raise ValueError(f"Unsupported rule_mode: {config.rule_mode}")
 
@@ -451,7 +591,7 @@ def score_validation(
 def select_smoothing(validation_cache: List[Dict[str, object]], config: StageConfig) -> int:
     rows: List[Dict[str, object]] = []
     for halflife in SMOOTHING_GRID:
-        if config.rule_mode == "single_threshold":
+        if config.rule_mode in {"single_threshold", "single_threshold_overlay", "single_threshold_drawdown_overlay", "single_threshold_drawdown_rising_overlay"}:
             result = score_validation(validation_cache, config, halflife, None, None)
         else:
             result = score_validation(validation_cache, config, halflife, BASELINE_LOWER, BASELINE_UPPER)
@@ -471,7 +611,7 @@ def select_smoothing(validation_cache: List[Dict[str, object]], config: StageCon
 
 
 def select_thresholds(validation_cache: List[Dict[str, object]], config: StageConfig, smoothing_halflife: int) -> Dict[str, float]:
-    if config.rule_mode == "single_threshold":
+    if config.rule_mode in {"single_threshold", "single_threshold_overlay", "single_threshold_drawdown_overlay", "single_threshold_drawdown_rising_overlay"}:
         return {"selected_lower_threshold": np.nan, "selected_upper_threshold": float(config.threshold)}
 
     rows: List[Dict[str, object]] = []
@@ -602,6 +742,36 @@ def worker_run_ml_stage(task: Tuple[Dict[str, str], Dict[str, object]]) -> Dict[
         positions, zones, _ = single_threshold_positions(prepared["oos_smoothed"][selected_smoothing], 0, float(config.threshold))
         rising_entry = np.zeros(len(positions), dtype=int)
         drawdown_entry = np.zeros(len(positions), dtype=int)
+    elif config.rule_mode == "single_threshold_overlay":
+        positions, zones, rising_entry, drawdown_entry, _ = single_threshold_overlay_positions(
+            prepared["oos_smoothed"][selected_smoothing],
+            prepared["oos_drawdown"],
+            0,
+            float(config.threshold),
+            float(config.rising_floor),
+            float(config.drawdown_threshold),
+            float(config.drawdown_prob_floor),
+        )
+    elif config.rule_mode == "single_threshold_drawdown_overlay":
+        positions, zones, drawdown_entry, _ = single_threshold_drawdown_overlay_positions(
+            prepared["oos_smoothed"][selected_smoothing],
+            prepared["oos_drawdown"],
+            0,
+            float(config.threshold),
+            float(config.drawdown_threshold),
+            float(config.drawdown_prob_floor),
+        )
+        rising_entry = np.zeros(len(positions), dtype=int)
+    elif config.rule_mode == "single_threshold_drawdown_rising_overlay":
+        positions, zones, rising_entry, drawdown_entry, _ = single_threshold_drawdown_rising_overlay_positions(
+            prepared["oos_smoothed"][selected_smoothing],
+            prepared["oos_drawdown"],
+            0,
+            float(config.threshold),
+            float(config.rising_floor),
+            float(config.drawdown_threshold),
+            float(config.drawdown_prob_floor),
+        )
     elif config.rule_mode == "double_threshold":
         positions, zones, _ = double_threshold_positions(
             prepared["oos_smoothed"][selected_smoothing],

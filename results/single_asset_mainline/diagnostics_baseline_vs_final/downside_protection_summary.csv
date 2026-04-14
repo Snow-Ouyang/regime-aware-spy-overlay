@@ -2,6 +2,6 @@ version,tail_bucket,strategy_mean,buyhold_mean
 paper_baseline_gspc_to_spy,worst_1pct_days,-0.027828439670558466,-0.04901798133527106
 paper_baseline_gspc_to_spy,worst_5pct_days,-0.01694976101174297,-0.02904109824749675
 paper_baseline_gspc_to_spy,worst_10pct_days,-0.012499475704091512,-0.02208791425499202
-final_recovery_overlay_gspc_to_spy,worst_1pct_days,-0.028892388686828367,-0.04901798133527106
-final_recovery_overlay_gspc_to_spy,worst_5pct_days,-0.017234355733957173,-0.02904109824749675
-final_recovery_overlay_gspc_to_spy,worst_10pct_days,-0.012671783082336354,-0.02208791425499202
+final_model_gspc_to_spy,worst_1pct_days,-0.027756117701844645,-0.04901798133527106
+final_model_gspc_to_spy,worst_5pct_days,-0.016584571151924354,-0.02904109824749675
+final_model_gspc_to_spy,worst_10pct_days,-0.012142282219109908,-0.02208791425499202

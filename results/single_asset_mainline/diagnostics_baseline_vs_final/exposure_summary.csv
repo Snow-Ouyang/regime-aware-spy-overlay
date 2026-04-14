@@ -6,10 +6,10 @@ paper_baseline_gspc_to_spy,2007-11_to_2009-06,0.21739130434782608
 paper_baseline_gspc_to_spy,2009-07_to_2019-12,0.7937476172321769
 paper_baseline_gspc_to_spy,2020-01_to_2022-12,0.5413333333333333
 paper_baseline_gspc_to_spy,2023-01_to_latest,0.7174447174447175
-final_recovery_overlay_gspc_to_spy,full_sample,0.6415182029434547
-final_recovery_overlay_gspc_to_spy,2000-05_to_2003-03,0.2050919377652051
-final_recovery_overlay_gspc_to_spy,2003-04_to_2007-10,0.7436791630340017
-final_recovery_overlay_gspc_to_spy,2007-11_to_2009-06,0.22946859903381642
-final_recovery_overlay_gspc_to_spy,2009-07_to_2019-12,0.7941288600838734
-final_recovery_overlay_gspc_to_spy,2020-01_to_2022-12,0.54
-final_recovery_overlay_gspc_to_spy,2023-01_to_latest,0.687960687960688
+final_model_gspc_to_spy,full_sample,0.6150271107668474
+final_model_gspc_to_spy,2000-05_to_2003-03,0.1966053748231966
+final_model_gspc_to_spy,2003-04_to_2007-10,0.6992153443766347
+final_model_gspc_to_spy,2007-11_to_2009-06,0.20772946859903382
+final_model_gspc_to_spy,2009-07_to_2019-12,0.7647731605032405
+final_model_gspc_to_spy,2020-01_to_2022-12,0.5293333333333333
+final_model_gspc_to_spy,2023-01_to_latest,0.6633906633906634

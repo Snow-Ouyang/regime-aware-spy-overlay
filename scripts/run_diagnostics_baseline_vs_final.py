@@ -7,6 +7,10 @@ import pandas as pd
 from single_asset_gspc_spy_common import annualized_sharpe, project_root
 
 
+BASELINE_NAME = "paper_baseline_gspc_to_spy"
+FINAL_NAME = "final_model_gspc_to_spy"
+BUYHOLD_NAME = FINAL_NAME
+
 PHASES = [
     ("2000-05_to_2003-03", "2000-05-26", "2003-03-31"),
     ("2003-04_to_2007-10", "2003-04-01", "2007-10-31"),
@@ -107,7 +111,6 @@ def _state_summary(signal: pd.DataFrame, stage: pd.DataFrame, version_name: str)
 
 def _reentry_stats(stage: pd.DataFrame, version_name: str) -> pd.DataFrame:
     frame = stage.copy()
-    frame["retail_position"] = frame["position"]
     reentries = frame[(frame["position"] == 1) & (frame["position"].shift(1).fillna(0) == 0)].copy()
     lags = []
     for _, row in reentries.iterrows():
@@ -173,18 +176,32 @@ def _exposure_summary(stage: pd.DataFrame, signal: pd.DataFrame, version_name: s
     return pd.DataFrame(rows)
 
 
+def _summary_line(stage: pd.DataFrame, buyhold: pd.DataFrame, version_name: str) -> str:
+    stage_equity = (1.0 + stage["strategy_ret"]).cumprod()
+    bh_equity = (1.0 + buyhold["strategy_ret"]).cumprod()
+    years = max(len(stage) / 252.0, 1e-9)
+    stage_ann = stage_equity.iloc[-1] ** (1 / years) - 1
+    bh_ann = bh_equity.iloc[-1] ** (1 / years) - 1
+    return (
+        f"- `{version_name}`: annual return {stage_ann:.4f}, "
+        f"Sharpe {annualized_sharpe(stage['strategy_excess_ret'].to_numpy()):.4f}, "
+        f"max drawdown {(stage_equity / stage_equity.cummax() - 1.0).min():.4f}, "
+        f"excess annual return vs buy-and-hold {stage_ann - bh_ann:.4f}"
+    )
+
+
 def main() -> None:
-    baseline_stage = _load_stage("paper_baseline_gspc_to_spy")
-    final_stage = _load_stage("final_recovery_overlay_gspc_to_spy")
-    buyhold = _load_buyhold("final_recovery_overlay_gspc_to_spy")
-    baseline_signal = _load_signal("paper_baseline_gspc_to_spy")
-    final_signal = _load_signal("final_recovery_overlay_gspc_to_spy")
+    baseline_stage = _load_stage(BASELINE_NAME)
+    final_stage = _load_stage(FINAL_NAME)
+    buyhold = _load_buyhold(BUYHOLD_NAME)
+    baseline_signal = _load_signal(BASELINE_NAME)
+    final_signal = _load_signal(FINAL_NAME)
 
     out_dir = diagnostics_dir()
     phase = pd.concat(
         [
-            _phase_stats(baseline_stage, buyhold, "paper_baseline_gspc_to_spy"),
-            _phase_stats(final_stage, buyhold, "final_recovery_overlay_gspc_to_spy"),
+            _phase_stats(baseline_stage, buyhold, BASELINE_NAME),
+            _phase_stats(final_stage, buyhold, FINAL_NAME),
         ],
         ignore_index=True,
     )
@@ -192,8 +209,8 @@ def main() -> None:
 
     state = pd.concat(
         [
-            _state_summary(baseline_signal, baseline_stage, "paper_baseline_gspc_to_spy"),
-            _state_summary(final_signal, final_stage, "final_recovery_overlay_gspc_to_spy"),
+            _state_summary(baseline_signal, baseline_stage, BASELINE_NAME),
+            _state_summary(final_signal, final_stage, FINAL_NAME),
         ],
         ignore_index=True,
     )
@@ -201,8 +218,8 @@ def main() -> None:
 
     reentry = pd.concat(
         [
-            _reentry_stats(baseline_stage, "paper_baseline_gspc_to_spy"),
-            _reentry_stats(final_stage, "final_recovery_overlay_gspc_to_spy"),
+            _reentry_stats(baseline_stage, BASELINE_NAME),
+            _reentry_stats(final_stage, FINAL_NAME),
         ],
         ignore_index=True,
     )
@@ -210,8 +227,8 @@ def main() -> None:
 
     switching = pd.concat(
         [
-            _switching_summary(baseline_stage, "paper_baseline_gspc_to_spy"),
-            _switching_summary(final_stage, "final_recovery_overlay_gspc_to_spy"),
+            _switching_summary(baseline_stage, BASELINE_NAME),
+            _switching_summary(final_stage, FINAL_NAME),
         ],
         ignore_index=True,
     )
@@ -219,8 +236,8 @@ def main() -> None:
 
     downside = pd.concat(
         [
-            _downside_summary(baseline_stage, buyhold, "paper_baseline_gspc_to_spy"),
-            _downside_summary(final_stage, buyhold, "final_recovery_overlay_gspc_to_spy"),
+            _downside_summary(baseline_stage, buyhold, BASELINE_NAME),
+            _downside_summary(final_stage, buyhold, FINAL_NAME),
         ],
         ignore_index=True,
     )
@@ -228,26 +245,37 @@ def main() -> None:
 
     exposure = pd.concat(
         [
-            _exposure_summary(baseline_stage, baseline_signal, "paper_baseline_gspc_to_spy"),
-            _exposure_summary(final_stage, final_signal, "final_recovery_overlay_gspc_to_spy"),
+            _exposure_summary(baseline_stage, baseline_signal, BASELINE_NAME),
+            _exposure_summary(final_stage, final_signal, FINAL_NAME),
         ],
         ignore_index=True,
     )
     exposure.to_csv(out_dir / "exposure_summary.csv", index=False)
 
+    baseline_reentry = reentry.loc[reentry["version"] == BASELINE_NAME, "lag_days"]
+    final_reentry = reentry.loc[reentry["version"] == FINAL_NAME, "lag_days"]
     summary_md = [
         "# Diagnostics Summary",
         "",
         "## Main finding",
-        "The final model improves on the paper baseline mainly through faster recovery participation while preserving the project's downside-protection profile.",
+        "Relative to the paper baseline, the new final model improves annual return and Sharpe while preserving the same broad downside-protection behavior.",
+        "",
+        "## Overall comparison",
+        _summary_line(baseline_stage, buyhold, BASELINE_NAME),
+        _summary_line(final_stage, buyhold, FINAL_NAME),
         "",
         "## Interpretation",
-        "- The final model is still best understood as a downside protection overlay / risk filter, not a pure timing-alpha replacement for buy-and-hold.",
-        "- The strongest relative value comes from crisis and post-crisis recovery windows.",
-        "- The final model still lags buy-and-hold during long uninterrupted bull markets because average market exposure remains below 1.",
+        "- The new final model is still best understood as a downside protection overlay / risk filter, not a pure timing-alpha replacement for buy-and-hold.",
+        "- The main improvement comes from a simpler execution layer: dynamic smoothing, a fixed 0.55 single threshold, and a drawdown-conditioned extra entry rule based on `drawdown_from_peak <= -20%` and `probability > 0.52`.",
+        "- The older double-threshold plus inertia-hold line was explored but did not remain the best solution under the unified 2000-05-26 protocol.",
+        "- Rising-2d extra entry was tested on top of the new baseline and rejected because it did not improve on the drawdown-only extra-entry version.",
+        "",
+        "## Re-entry",
+        f"- Paper baseline mean / median re-entry lag: {baseline_reentry.mean():.2f} / {baseline_reentry.median():.2f} days" if not baseline_reentry.empty else "- Paper baseline re-entry lag: unavailable",
+        f"- Final model mean / median re-entry lag: {final_reentry.mean():.2f} / {final_reentry.median():.2f} days" if not final_reentry.empty else "- Final model re-entry lag: unavailable",
         "",
         "## Decision",
-        "The unified 2000-05-26 protocol supports using `final_recovery_overlay_gspc_to_spy` as the single-asset mainline model.",
+        "The unified protocol supports using `final_model_gspc_to_spy` as the single-asset mainline model.",
     ]
     (out_dir / "diagnostic_summary.md").write_text("\n".join(summary_md), encoding="utf-8")
 

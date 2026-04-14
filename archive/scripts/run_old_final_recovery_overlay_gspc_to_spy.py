@@ -3,13 +3,13 @@ from single_asset_gspc_spy_common import StageConfig, run_ml_stage, write_stage_
 
 def main() -> None:
     config = StageConfig(
-        stage_name="final_model_gspc_to_spy",
-        results_subdir="final_model_gspc_to_spy",
+        stage_name="final_recovery_overlay_gspc_to_spy",
+        results_subdir="final_recovery_overlay_gspc_to_spy",
         feature_mode="enhanced",
-        rule_mode="single_threshold_drawdown_overlay",
-        threshold=0.55,
+        rule_mode="final_overlay",
+        rising_floor=0.52,
         drawdown_threshold=0.20,
-        drawdown_prob_floor=0.52,
+        drawdown_prob_floor=0.44,
         output_ml_figures=True,
     )
     result = run_ml_stage(config)
