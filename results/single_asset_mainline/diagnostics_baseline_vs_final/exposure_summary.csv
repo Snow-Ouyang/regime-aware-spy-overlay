@@ -1,0 +1,15 @@
+version,segment,avg_position
+paper_baseline_gspc_to_spy,full_sample,0.6347017815646785
+paper_baseline_gspc_to_spy,2000-05_to_2003-03,0.12871287128712872
+paper_baseline_gspc_to_spy,2003-04_to_2007-10,0.7358326068003488
+paper_baseline_gspc_to_spy,2007-11_to_2009-06,0.21739130434782608
+paper_baseline_gspc_to_spy,2009-07_to_2019-12,0.7937476172321769
+paper_baseline_gspc_to_spy,2020-01_to_2022-12,0.5413333333333333
+paper_baseline_gspc_to_spy,2023-01_to_latest,0.7174447174447175
+final_recovery_overlay_gspc_to_spy,full_sample,0.6415182029434547
+final_recovery_overlay_gspc_to_spy,2000-05_to_2003-03,0.2050919377652051
+final_recovery_overlay_gspc_to_spy,2003-04_to_2007-10,0.7436791630340017
+final_recovery_overlay_gspc_to_spy,2007-11_to_2009-06,0.22946859903381642
+final_recovery_overlay_gspc_to_spy,2009-07_to_2019-12,0.7941288600838734
+final_recovery_overlay_gspc_to_spy,2020-01_to_2022-12,0.54
+final_recovery_overlay_gspc_to_spy,2023-01_to_latest,0.687960687960688

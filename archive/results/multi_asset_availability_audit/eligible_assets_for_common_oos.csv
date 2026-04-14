@@ -1,0 +1,2 @@
+asset,raw_data_start_date,raw_data_end_date,feature_start_date,feature_end_date,merged_dataset_start_date,merged_dataset_end_date,first_possible_oos_date,can_match_spy_oos_start,gap_vs_spy_oos_start_days,issue_flag,issue_reason
+SPY,1993-01-29,2026-04-10,1993-01-29,2026-04-10,1993-04-27,2026-04-10,2008-04-28,True,0.0,ok,

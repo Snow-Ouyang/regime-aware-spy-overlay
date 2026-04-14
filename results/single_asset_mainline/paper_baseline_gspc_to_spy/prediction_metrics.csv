@@ -1,0 +1,2 @@
+version,avg_oos_accuracy,avg_oos_balanced_accuracy,avg_oos_f1,avg_oos_log_loss,avg_oos_roc_auc
+paper_baseline_gspc_to_spy,0.8132919315045659,0.697508101896172,0.7842715667249188,0.4070448990071318,0.830678752686958

@@ -1,0 +1,7 @@
+version,horizon_days,switch_count,avg_forward_return_after_switch
+paper_baseline_gspc_to_spy,5,246,0.0032356454007229653
+paper_baseline_gspc_to_spy,20,246,0.006178403951445893
+paper_baseline_gspc_to_spy,60,246,0.016767396327282094
+final_recovery_overlay_gspc_to_spy,5,245,0.0030101990591116542
+final_recovery_overlay_gspc_to_spy,20,245,0.009675353064830984
+final_recovery_overlay_gspc_to_spy,60,245,0.024399237949856274
