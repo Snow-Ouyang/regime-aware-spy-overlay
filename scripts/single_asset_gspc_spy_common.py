@@ -11,6 +11,14 @@ def configure_paths() -> None:
     user_site = site.getusersitepackages()
     if user_site and user_site not in sys.path:
         sys.path.append(user_site)
+    vendor_override = os.environ.get("BULL_BEAR_VENDOR_PATH")
+    if vendor_override:
+        vendor_override_path = Path(vendor_override)
+        if vendor_override_path.exists():
+            vendor_override_str = str(vendor_override_path)
+            if vendor_override_str not in sys.path:
+                sys.path.insert(0, vendor_override_str)
+            return
     for vendor_name in [".vendor_local", ".vendor"]:
         vendor_path = Path(__file__).resolve().parents[1] / vendor_name
         if vendor_path.exists():

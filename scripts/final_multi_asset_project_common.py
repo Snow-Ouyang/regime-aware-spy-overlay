@@ -1,3 +1,4 @@
+import os
 import site
 import sys
 from pathlib import Path
@@ -11,6 +12,14 @@ def configure_paths() -> None:
     user_site = site.getusersitepackages()
     if user_site and user_site not in sys.path:
         sys.path.append(user_site)
+    vendor_override = os.environ.get("BULL_BEAR_VENDOR_PATH")
+    if vendor_override:
+        vendor_override_path = Path(vendor_override)
+        if vendor_override_path.exists():
+            vendor_override_str = str(vendor_override_path)
+            if vendor_override_str not in sys.path:
+                sys.path.insert(0, vendor_override_str)
+            return
     vendor_site = Path(__file__).resolve().parents[1] / ".vendor"
     if vendor_site.exists():
         vendor_site_str = str(vendor_site)
@@ -19,8 +28,6 @@ def configure_paths() -> None:
 
 
 configure_paths()
-
-import yfinance as yf
 
 from build_all_jm_features import build_features, load_risk_free_data
 
@@ -157,6 +164,8 @@ def ensure_raw_data(ticker: str, stem: str) -> Path:
     output_path = raw_path_for_stem(stem)
     if output_path.exists():
         return output_path
+
+    import yfinance as yf
 
     frame = yf.download(
         tickers=ticker,

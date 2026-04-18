@@ -73,6 +73,13 @@ Why this matters:
 
 In this repository, the JumpModel configuration is fixed in the active mainline rather than re-searched at every stage. That means the supervised problem is stable: the label definition does not drift while execution rules are being compared.
 
+The retained JumpModel audit is kept deliberately simple:
+
+- the active audit is `state_semantics_window_audit`
+- it evaluates the two latent states over train, validation, and OOS windows
+- the return comparison now uses state-level annualized CAGR rather than mean daily return
+- the goal is to verify that the clustering is separating a high-return / low-volatility state from a low-return / high-volatility state
+
 #### Step B. XGBoost: supervised prediction of the next regime label
 
 Once JumpModel has produced the daily regime labels, the supervised dataset is built in strict time order:
@@ -277,6 +284,26 @@ Interpretation:
 - This is consistent with the broader project conclusion: the final edge comes mainly from a better execution layer, not from a wholesale jump in raw classifier quality.
 - The time-series plot below is useful because it shows that classification quality is not constant across windows; the overlay has to survive changing regime conditions rather than a single stable ML environment.
 
+### JumpModel Diagnostics
+
+The project does not evaluate JumpModel only by whether XGBoost can predict its labels. It also checks whether the two latent states have coherent economic semantics across windows.
+
+- The retained audit is [`results/single_asset_mainline/state_semantics_window_audit`](results/single_asset_mainline/state_semantics_window_audit).
+- The return panel below is based on state-level annualized CAGR within each split.
+- Under the current mainline, the clustering consistently separates:
+  - one state with higher annualized return and lower volatility
+  - one state with lower annualized return and higher volatility
+
+This is the main reason the JumpModel layer remains defensible: it is not just producing arbitrary clusters, it is producing a stable high-return / low-vol state versus low-return / high-vol state split.
+
+State return audit:
+
+![JumpModel state CAGR by split](results/single_asset_mainline/state_semantics_window_audit/state_mean_return_by_split.png)
+
+State volatility audit:
+
+![JumpModel state annualized volatility by split](results/single_asset_mainline/state_semantics_window_audit/state_annualized_volatility_by_split.png)
+
 Confusion matrix:
 
 ![Final model confusion matrix](results/single_asset_mainline/final_model_gspc_to_spy/confusion_matrix.png)
@@ -313,6 +340,8 @@ The following directions were tested but do not belong to the current mainline:
 - double-threshold plus inertia hold under the unified protocol
 - rising_2d extra entry layered on top of the new drawdown-conditioned baseline
 - portfolio-level drawdown stop overlays
+- probability-to-future-return predictive-power tests
+- jump-penalty grid search for the state-semantics audit
 
 These remain available under the archived exploratory track:
 
@@ -338,6 +367,7 @@ Active mainline scripts:
 - [`scripts/run_feature_enhanced_gspc_to_spy.py`](scripts/run_feature_enhanced_gspc_to_spy.py)
 - [`scripts/run_final_model_gspc_to_spy.py`](scripts/run_final_model_gspc_to_spy.py)
 - [`scripts/run_diagnostics_baseline_vs_final.py`](scripts/run_diagnostics_baseline_vs_final.py)
+- [`scripts/run_state_semantics_window_audit.py`](scripts/run_state_semantics_window_audit.py)
 
 ## Reproducibility
 
@@ -350,6 +380,7 @@ To reproduce the active mainline:
    - `python scripts\run_feature_enhanced_gspc_to_spy.py`
    - `python scripts\run_final_model_gspc_to_spy.py`
    - `python scripts\run_diagnostics_baseline_vs_final.py`
+   - `python scripts\run_state_semantics_window_audit.py`
 
 All active outputs will be written under:
 - [`results/single_asset_mainline`](results/single_asset_mainline)

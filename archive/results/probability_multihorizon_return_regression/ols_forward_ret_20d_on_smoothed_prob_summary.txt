@@ -1,0 +1,25 @@
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:        forward_ret_20d   R-squared:                       0.000
+Model:                            OLS   Adj. R-squared:                 -0.000
+Method:                 Least Squares   F-statistic:                    0.5216
+Date:                Wed, 15 Apr 2026   Prob (F-statistic):              0.470
+Time:                        14:26:16   Log-Likelihood:                 10707.
+No. Observations:                6436   AIC:                        -2.141e+04
+Df Residuals:                    6434   BIC:                        -2.140e+04
+Df Model:                           1                                         
+Covariance Type:                  HC3                                         
+==================================================================================================
+                                     coef    std err          z      P>|z|      [0.025      0.975]
+--------------------------------------------------------------------------------------------------
+const                              0.0063      0.002      3.932      0.000       0.003       0.009
+predicted_probability_smoothed     0.0015      0.002      0.722      0.470      -0.003       0.006
+==============================================================================
+Omnibus:                     1475.936   Durbin-Watson:                   0.135
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):             7831.018
+Skew:                          -0.998   Prob(JB):                         0.00
+Kurtosis:                       8.022   Cond. No.                         4.18
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity robust (HC3)

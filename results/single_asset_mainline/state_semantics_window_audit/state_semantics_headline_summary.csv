@@ -1,0 +1,4 @@
+split,share_windows_state0_has_higher_cagr,share_windows_state1_has_higher_cagr,share_windows_train_bull_state_equals_state1
+train,1.0,0.0,0.0
+validation,1.0,0.0,0.0
+oos,1.0,0.0,0.0
